@@ -62,3 +62,6 @@ Thumbs.db
 .coverage
 coverage/
 .testcontainers/
+
+# === Archivos de entorno ===
+.env
