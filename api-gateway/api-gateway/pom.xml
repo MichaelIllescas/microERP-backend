@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Hereda configuración base de Spring Boot -->
+    <!-- Heredamos manejo de versiones/plugins de Spring Boot -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.4</version> <!-- ✅ recomiendo usar 3.3.4 (última estable), en vez de 3.5.5 -->
-        <relativePath/> <!-- lookup parent from repository -->
+        <version>3.3.4</version>
+        <relativePath/>
     </parent>
 
     <groupId>com.imperialnet</groupId>
@@ -18,32 +19,62 @@
     <description>API Gateway para MicroERP</description>
 
     <properties>
+        <!-- Java 21: compatible con Boot 3.3.x -->
         <java.version>21</java.version>
-        <spring-cloud.version>2023.0.3</spring-cloud.version> <!-- ✅ última release train estable de Spring Cloud -->
+        <!-- Release train de Spring Cloud compatible con Boot 3.3.x -->
+        <spring-cloud.version>2023.0.3</spring-cloud.version>
     </properties>
 
     <dependencies>
-        <!-- Starter para crear el API Gateway con Spring Cloud Gateway -->
+        <!-- Spring Cloud Gateway (reactivo/WebFlux).
+             IMPORTANTE: este es el starter correcto, no uses webmvc en gateway. -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-gateway</artifactId> <!-- ❌ antes tenías gateway-server-webmvc, no corresponde -->
+            <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
 
-        <!-- Starter para registrar este Gateway como cliente en Eureka -->
+        <!-- Eureka Client: para que el gateway descubra microservicios por nombre (lb://service) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
 
-        <!-- Dependencias de testing -->
+        <!-- Seguridad base de Spring (filtros, cadenas de filtros, etc.) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- Resource Server (validación de JWT vía issuer-uri/JWKS de Keycloak) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
+
+        <!-- (Opcional pero recomendado) Actuator: health, info y métricas -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Tests (incluye soporte para WebFlux/Reactor tests) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+
+
     </dependencies>
 
-    <!-- Importa el BOM de Spring Cloud para manejar versiones compatibles -->
+    <!-- BOM de Spring Cloud: alinea versiones de starters Cloud con Boot -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -58,12 +89,11 @@
 
     <build>
         <plugins>
-            <!-- Plugin para empaquetar y ejecutar el proyecto -->
+            <!-- Empaquetado/arranque de la app -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
-
 </project>
