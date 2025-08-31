@@ -1,4 +1,4 @@
-package com.imperialnet.user_service.security;
+package com.imperialnet.user_service.infrastructure.config.security;
 
 
 import org.springframework.context.annotation.Bean;
@@ -45,7 +45,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // APIs stateless
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/health","/swagger-ui/**","/v3/api-docs/**","/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
