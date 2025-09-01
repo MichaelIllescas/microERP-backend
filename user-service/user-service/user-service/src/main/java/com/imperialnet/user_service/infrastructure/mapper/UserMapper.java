@@ -6,7 +6,6 @@ import com.imperialnet.user_service.application.dto.UserResponse;
 import com.imperialnet.user_service.infrastructure.persistence.entity.UserEntity;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper {
 
     // 1) Request -> Dominio
@@ -17,10 +16,13 @@ public interface UserMapper {
     UserResponse toResponse(User user);
 
     // 3) Entity <-> Dominio
-    User toDomain(UserEntity entity);
+    User toDomainFromEntity(UserEntity entity);
 
     // 4) Dominio -> Entity
     UserEntity toEntity(User user);
 
 
+    // Utilidad para updates parciales (si decides usarlo)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateEntityFromDomain(User source, @MappingTarget UserEntity target);
 }

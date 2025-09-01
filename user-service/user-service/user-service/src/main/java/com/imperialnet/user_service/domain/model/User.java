@@ -3,7 +3,8 @@ package com.imperialnet.user_service.domain.model;
 import lombok.*;
 
 @Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@NoArgsConstructor @AllArgsConstructor
+@Builder(toBuilder = true)
 public class User {
     private Long id;             // id local en la BD
     private String keycloakId;   // id en Keycloak
@@ -12,4 +13,5 @@ public class User {
     private String lastName;
     private String email;        // único
     private String phone;
+    private String status;
 }

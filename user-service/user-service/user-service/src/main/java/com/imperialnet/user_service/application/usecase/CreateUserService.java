@@ -30,9 +30,10 @@ public class CreateUserService implements CreateUserUseCase {
             throw new IllegalArgumentException("La contraseña es obligatoria");
         }
 
+
         // 2) Convertir DTO -> Dominio
         User user = userMapper.toDomain(request);
-
+        user.setStatus("ACTIVE");
         // 3) Crear en Keycloak
         String keycloakId = keycloakUserPort.createUser(user, request.getPassword());
         user.setKeycloakId(keycloakId);

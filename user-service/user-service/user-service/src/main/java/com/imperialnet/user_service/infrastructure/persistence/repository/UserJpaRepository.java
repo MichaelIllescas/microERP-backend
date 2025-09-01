@@ -11,5 +11,6 @@ public interface UserJpaRepository extends JpaRepository<UserEntity, Long> {
 
     Optional<UserEntity> findByKeycloakId(String keycloakId);
 
+    boolean existsByEmailAndIdNot(String email, Long id);
 
 }

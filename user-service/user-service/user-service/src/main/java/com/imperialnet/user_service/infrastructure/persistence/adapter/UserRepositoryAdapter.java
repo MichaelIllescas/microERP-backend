@@ -23,31 +23,41 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     public User save(User user) {
         UserEntity entity = userMapper.toEntity(user);
         UserEntity saved = userJpaRepository.save(entity);
-        return userMapper.toDomain(saved);
+        return userMapper.toDomainFromEntity(saved);
     }
 
     @Override
     public Optional<User> findById(Long id) {
-        return userJpaRepository.findById(id)
-                .map(userMapper::toDomain);
+        Optional<UserEntity> user= userJpaRepository.findById(id);
+        return Optional.of(userMapper.toDomainFromEntity(user.get()));
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
         return userJpaRepository.findByEmail(email)
-                .map(userMapper::toDomain);
+                .map(userMapper::toDomainFromEntity);
     }
 
     @Override
     public Optional<User> findByKeycloakId(String keycloakId) {
         return userJpaRepository.findByKeycloakId(keycloakId)
-                .map(userMapper::toDomain);
+                .map(userMapper::toDomainFromEntity);
     }
     @Override
     public List<User> findAll() {
         return userJpaRepository.findAll()
                 .stream()
-                .map(userMapper::toDomain)
+                .map(userMapper::toDomainFromEntity)
                 .toList();
+    }
+
+    @Override
+    public boolean existsByEmailAndIdNot(String email, Long excludedId) {
+        return userJpaRepository.existsByEmailAndIdNot(email, excludedId);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        userJpaRepository.deleteById(id);
     }
 }
