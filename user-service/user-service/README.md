@@ -1,89 +1,205 @@
-# 📘 Guía de Arquitectura Hexagonal (Ports & Adapters)
+# 📘 Documentación Técnica – User Service
 
 ## 🎯 Objetivo
-La arquitectura hexagonal (también conocida como **Ports & Adapters**) se utiliza para **separar la lógica de negocio del resto de la infraestructura técnica**.  
-De esta forma:
-- El **dominio** permanece limpio, sin depender de frameworks ni de detalles externos.
-- La **aplicación** define los casos de uso de manera clara.
-- La **infraestructura** se encarga de los detalles técnicos como HTTP, bases de datos o servicios externos.
-
-Esto permite que el sistema sea **fácil de mantener, probar y extender**, ya que cambiar una tecnología (ej. pasar de MySQL a MongoDB) no afecta al núcleo de negocio.
+Este microservicio gestiona los **usuarios de negocio** (perfil, teléfono, email, etc.) y se integra con **Keycloak** para la gestión de credenciales y roles.  
+Se diseñó siguiendo el patrón **Arquitectura Hexagonal (Ports & Adapters)** para mantener el dominio desacoplado de la infraestructura técnica.
 
 ---
 
-## 🏗️ Capas principales
+## 🏗️ Estructura de Carpetas
 
-### 1. **Application**
-La capa de **aplicación** define **qué hace el sistema** (los casos de uso).  
-Aquí no importa cómo se guardan los datos ni cómo se reciben las peticiones, solo importa la lógica de orquestación.
+### 📂 `application/`
+Define **qué hace la aplicación**. Aquí viven los **casos de uso**, los **puertos** y los **DTOs**.
 
 - **dto/**  
-  Contiene objetos de transferencia de datos.  
+  Objetos de transferencia de datos entre capas.  
   Se utilizan para llevar información entre capas sin exponer directamente las entidades del dominio.
 
 - **port/**  
-  Define interfaces (puertos) que separan la aplicación de la infraestructura.
-    - **in/**: Qué operaciones externas pueden invocar los casos de uso (entrada al sistema).
-    - **out/**: Qué dependencias externas necesita la aplicación (salida del sistema).
+  Interfaces que actúan como contratos entre la aplicación y la infraestructura.
+    - **in/** → Operaciones que se pueden invocar desde fuera del sistema (ej. crear, buscar o listar usuarios).
+    - **out/** → Dependencias externas que la aplicación necesita (ej. guardar en la base de datos, crear en Keycloak).
 
 - **usecase/**  
-  Implementa los **casos de uso del negocio**.  
-  Cada caso de uso orquesta el flujo: recibe datos, interactúa con el dominio y utiliza puertos de salida para acceder a infraestructura.
+  Implementaciones de los **casos de uso**.
+    - Contienen la lógica de orquestación.
+    - Invocan al dominio para aplicar reglas de negocio.
+    - Usan los puertos de salida para acceder a DB o Keycloak.
 
 ---
 
-### 2. **Domain**
-La capa de **dominio** representa el **corazón del negocio**.  
-Aquí se define la lógica más pura y las reglas que no cambian aunque se reemplacen tecnologías.
+### 📂 `domain/`
+Representa el **núcleo del negocio**.  
+Define los **modelos** y las **reglas de negocio puras**.
 
 - **model/**  
-  Contiene las entidades del negocio. Estas entidades representan conceptos centrales (ej. un usuario, un cliente, un producto).
+  Entidades centrales del dominio (ej. Usuario).  
+  Contienen atributos y posibles validaciones de negocio.
 
 - **service/**  
-  Servicios de dominio que encapsulan reglas de negocio más complejas que no pertenecen a una sola entidad.  
-  Ejemplo: validaciones, cálculos, reglas de negocio.
+  Servicios de dominio que encapsulan reglas complejas, independientes de frameworks o infraestructura.
 
-⚠️ El dominio **no depende de nada externo** (ni HTTP, ni bases de datos, ni frameworks).
+⚠️ Esta capa no depende de nada externo: ni Spring, ni JPA, ni Keycloak.
 
 ---
 
-### 3. **Infrastructure**
-La capa de **infraestructura** se encarga de los **detalles técnicos** que permiten que la aplicación funcione en el mundo real.  
-Aquí se implementan las interfaces definidas en los puertos de la aplicación.
+### 📂 `infrastructure/`
+Implementa los **detalles técnicos** que permiten que la aplicación funcione.
 
 - **adapter/**  
   Implementaciones concretas de los puertos.
-    - **in/**: Adapters de entrada (ejemplo: controladores HTTP que reciben peticiones).
-    - **out/**: Adapters de salida (ejemplo: repositorios que hablan con la base de datos, o conectores a servicios externos).
+    - **in/** → Adaptadores de entrada (ejemplo: controladores HTTP que reciben peticiones REST).
+    - **out/** → Adaptadores de salida (ejemplo: conector a Keycloak, repositorio que habla con la base de datos).
 
 - **config/**  
-  Configuraciones de frameworks y librerías (seguridad, mapeadores, documentación, etc.).
+  Configuración de librerías y frameworks.  
+  Incluye seguridad, integración con Keycloak, mapeadores, documentación Swagger/OpenAPI, etc.
 
 - **mapper/**  
-  Conversores entre modelos de dominio y modelos de infraestructura (ej. entre entidad de dominio y entidad JPA).
+  Conversores entre objetos de dominio, DTOs y entidades de persistencia.  
+  Utiliza MapStruct para generar implementaciones automáticas.
 
 - **persistence/**  
   Todo lo relacionado con la base de datos.
-    - **entity/**: Entidades de persistencia (normalmente JPA).
-    - **repository/**: Repositorios propios del framework (ej. Spring Data JPA).
-    - **adapter/**: Implementaciones que traducen entre el dominio y la base de datos utilizando los repositorios.
+    - **entity/** → Entidades JPA que reflejan tablas de la base.
+    - **repository/** → Repositorios Spring Data JPA.
+    - **adapter/** → Implementación del puerto de persistencia, traduce entre el dominio y JPA.
 
 ---
 
-## 🔄 Flujo típico de una operación
-1. Una petición entra al sistema por un **adapter de entrada** (ej. un controlador HTTP).
-2. El controlador invoca un **caso de uso** de la aplicación.
-3. El caso de uso ejecuta la lógica de negocio, apoyándose en las entidades del **dominio**.
-4. Si necesita guardar o consultar datos, llama a un **puerto de salida**.
-5. Un **adapter de salida** implementa ese puerto y habla con la infraestructura real (ej. base de datos, Keycloak, API externa).
-6. La respuesta regresa por el mismo camino hacia el cliente.
+## 🔄 Flujo de Ejecución (Ejemplo: Crear Usuario)
+
+1. El **cliente** hace un `POST /users`.
+2. La petición llega al **Controller** (adapter/in).
+3. El Controller transforma el JSON en un **DTO** y lo envía al **caso de uso** correspondiente.
+4. El **Caso de Uso** (application/usecase) crea una entidad de dominio y ejecuta reglas de negocio.
+5. El Caso de Uso usa dos **puertos de salida**:
+    - Repositorio → Guardar datos de negocio en la **base de datos**.
+    - Servicio externo → Crear credenciales en **Keycloak**.
+6. Los **adapters de salida** implementan esos puertos:
+    - El repositorio usa JPA para persistir.
+    - El conector a Keycloak consume la API de administración de Keycloak.
+7. El Caso de Uso recibe las respuestas y construye un **DTO de salida**.
+8. El Controller devuelve la respuesta al **cliente** como JSON.
+
+---
+
+## 📖 Diagrama en Flujo
+![img_1.png](img_1.png)
 
 ---
 
 ## ✅ Beneficios
-- **Desacoplamiento**: el negocio no depende de frameworks.
-- **Testabilidad**: se pueden probar los casos de uso con puertos simulados (mocks).
-- **Flexibilidad**: cambiar tecnologías externas no afecta al dominio ni a la aplicación.
-- **Escalabilidad**: es más sencillo extender el sistema con nuevos adapters o servicios.  
- 
-- ![img.png](img.png)
+- **Desacoplamiento total** entre dominio y tecnología.
+- **Sustituibilidad**: se puede cambiar DB o proveedor de autenticación sin tocar los casos de uso.
+- **Testabilidad**: los casos de uso se pueden probar con mocks de los puertos.
+- **Escalabilidad**: se pueden agregar nuevos adapters de entrada (ej. gRPC, mensajería) sin modificar el dominio.
+
+---
+
+## 🌐 Endpoints Principales
+
+- `POST /users` → Crear un nuevo usuario (Keycloak + BD).
+- `GET /users` → Listar todos los usuarios.
+- `GET /users/{id}` → Obtener usuario por ID.
+- `GET /users/me` → Obtener el perfil del usuario autenticado (desde el JWT).
+- `PUT /users/{id}` → Actualizar datos de un usuario.
+- `PATCH /users/{id}/status` → Actualizar estado (ACTIVO/INACTIVO).
+- `DELETE /users/{id}` → Eliminar un usuario (Keycloak + BD).
+- `PUT /users/{id}/password` → Cambiar contraseña en Keycloak.
+- `POST /users/{id}/reset-password` → Enviar email de reseteo de contraseña vía Keycloak.
+
+---
+
+## 🛠️ Tecnologías Utilizadas
+
+- **Java 21**
+- **Spring Boot 3.3.x**
+- **Spring Data JPA** con **MySQL**
+- **Spring Security** (OAuth2 Resource Server)
+- **Keycloak Admin Client** para integración de usuarios y roles
+- **MapStruct** para mapeo entre entidades/DTOs
+- **Lombok** para reducir boilerplate
+- **Swagger / OpenAPI** para documentación de endpoints
+- **Logback** para logging avanzado
+    - Logs en consola, archivo plano y archivo JSON
+    - MDC con `traceId` para trazabilidad de requests
+    - Filtro global para registrar cada request (método, URI, usuario autenticado, status y duración)
+
+---
+
+## 🔐 Integración con Keycloak
+
+- Creación de usuarios con credenciales en **Keycloak** al registrarlos en el sistema.
+- Sincronización de datos clave (email, estado, perfil).
+- Eliminación de usuarios tanto en BD local como en Keycloak.
+- Reseteo y actualización de contraseñas mediante la API de administración de Keycloak.
+- Gestión de roles a través de Keycloak.
+
+---
+
+## 📝 Logging
+
+Se implementó un sistema de logging completo para:
+- **Controllers**: entrada y salida de requests.
+- **Casos de uso**: trazabilidad de operaciones críticas (crear, actualizar, eliminar).
+- **Adapters externos**: integración con Keycloak y base de datos.
+- **Excepciones globales**: manejo centralizado de errores.
+- **Filtros HTTP**: registro de cada request entrante con usuario autenticado, status y duración.
+- **MDC (Mapped Diagnostic Context)**: se genera un `traceId` único por request para correlacionar logs en sistemas de observabilidad (Grafana/ELK).
+
+Logs disponibles en:
+- **Consola (texto plano)**
+- **Archivo plano rotativo** (`logs/user-service.log`)
+- **Archivo JSON** (`logs/user-service-json.log`)  
+
+## 🧪 Tests Unitarios
+
+El microservicio cuenta con **tests unitarios implementados con JUnit 5 y Mockito**, cubriendo los principales **casos de uso de la capa `application/usecase`**.  
+Los tests validan tanto escenarios exitosos como excepciones, asegurando la **robustez** de la lógica de negocio y la correcta interacción con Keycloak y la base de datos.
+
+### Cobertura actual
+
+- **Creación de usuario**
+    - Caso válido → guarda en BD y en Keycloak
+    - Email o contraseña faltante → lanza excepción
+
+- **Actualización de usuario**
+    - Usuario inexistente → lanza `ResourceNotFoundException`
+    - Email duplicado → lanza `EmailAlreadyInUseException`
+    - Caso válido → persiste cambios y sincroniza con Keycloak
+
+- **Eliminación de usuario**
+    - Usuario inexistente → lanza `ResourceNotFoundException`
+    - Caso válido → elimina en BD y en Keycloak
+
+- **Consulta de usuario por ID**
+    - Usuario inexistente → excepción
+    - Caso válido → devuelve `UserResponse`
+
+- **Consulta del usuario autenticado**
+    - KeycloakId inexistente → excepción
+    - KeycloakId válido → devuelve `UserResponse`
+
+- **Listado de usuarios**
+    - Lista vacía → devuelve lista vacía
+    - Lista con usuarios → devuelve lista de `UserResponse`
+
+- **Cambio de contraseña**
+    - Usuario inexistente → excepción
+    - Caso válido → invoca a Keycloak para actualizar contraseña
+
+- **Reseteo de contraseña**
+    - ID inválido → lanza `IllegalArgumentException`
+    - Usuario inexistente → lanza `ResourceNotFoundException`
+    - Caso válido → envía email de reseteo vía Keycloak
+
+- **Actualización de estado**
+    - Usuario inexistente → excepción
+    - Caso válido → actualiza estado en BD y en Keycloak
+
+### Beneficios de los tests
+- Verificación de **reglas de negocio** críticas.
+- Asegura la correcta **orquestación de casos de uso**.
+- Permite hacer **refactors con seguridad** gracias a los mocks.
+- Ejecución rápida y aislada, sin necesidad de levantar Keycloak ni la base de datos.  

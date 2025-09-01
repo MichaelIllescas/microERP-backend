@@ -4,7 +4,9 @@ import com.imperialnet.user_service.domain.model.User;
 import com.imperialnet.user_service.application.dto.CreateUserRequest;
 import com.imperialnet.user_service.application.dto.UserResponse;
 import com.imperialnet.user_service.infrastructure.persistence.entity.UserEntity;
-import org.mapstruct.*;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 public interface UserMapper {
 

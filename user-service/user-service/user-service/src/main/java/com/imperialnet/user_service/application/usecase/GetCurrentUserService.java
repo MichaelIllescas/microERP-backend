@@ -5,11 +5,13 @@ import com.imperialnet.user_service.application.port.in.GetCurrentUserUseCase;
 import com.imperialnet.user_service.application.port.out.UserRepositoryPort;
 import com.imperialnet.user_service.domain.model.User;
 import com.imperialnet.user_service.infrastructure.mapper.UserMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
  * Implementation of GetCurrentUserUseCase.
  */
+@Slf4j
 @Service
 public class GetCurrentUserService implements GetCurrentUserUseCase {
 
@@ -23,9 +25,16 @@ public class GetCurrentUserService implements GetCurrentUserUseCase {
 
     @Override
     public UserResponse getCurrentUser(String keycloakId) {
+        log.info("📥 Solicitando perfil del usuario con keycloakId={}", keycloakId);
+
         User user = userRepositoryPort
                 .findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new RuntimeException("User not found with Keycloak ID: " + keycloakId));
+                .orElseThrow(() -> {
+                    log.warn("⚠️ Usuario no encontrado con keycloakId={}", keycloakId);
+                    return new RuntimeException("User not found with Keycloak ID: " + keycloakId);
+                });
+
+        log.info("✅ Usuario encontrado: id={} email={}", user.getId(), user.getEmail());
         return userMapper.toResponse(user);
     }
 }
