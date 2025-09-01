@@ -49,7 +49,7 @@ El servicio sigue **arquitectura hexagonal**, separando la lógica de negocio de
 4. Se utiliza el puerto de salida `ProductRepositoryPort` para persistir.
 5. El adaptador de persistencia (`ProductRepositoryAdapter`) convierte el modelo de dominio a entidad JPA y lo guarda.
 6. El resultado vuelve al caso de uso → mapper → DTO de respuesta → API REST.
-
+![img.png](img.png)
 ---
 
 ## 🚀 Endpoints principales
@@ -123,7 +123,7 @@ product-service
          ├── repository
          └── adapter
 ```
-
+![img_1.png](img_1.png)
 ---
 
 ## ✅ Beneficios de este diseño

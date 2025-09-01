@@ -81,7 +81,7 @@ Implementa los **detalles técnicos** que permiten que la aplicación funcione.
     - El conector a Keycloak consume la API de administración de Keycloak.
 7. El Caso de Uso recibe las respuestas y construye un **DTO de salida**.
 8. El Controller devuelve la respuesta al **cliente** como JSON.
-
+![img_2.png](img_2.png)
 ---
 
 ## 📖 Diagrama en Flujo
