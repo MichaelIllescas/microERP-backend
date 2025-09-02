@@ -2,6 +2,8 @@ package com.imperialnet.product_service.application.usecase;
 
 import com.imperialnet.product_service.application.dto.CreateProductRequest;
 import com.imperialnet.product_service.application.dto.ProductResponse;
+import com.imperialnet.product_service.application.dto.ProductCreatedEvent;
+import com.imperialnet.product_service.application.event.ProductEventPublisher;
 import com.imperialnet.product_service.application.port.in.CreateProductUseCase;
 import com.imperialnet.product_service.application.port.out.CategoryRepositoryPort;
 import com.imperialnet.product_service.application.port.out.ProductRepositoryPort;
@@ -20,6 +22,7 @@ public class CreateProductService implements CreateProductUseCase {
     private final ProductRepositoryPort repositoryPort;
     private final CategoryRepositoryPort categoryRepositoryPort;
     private final ProductMapper mapper;
+    private final ProductEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -36,6 +39,16 @@ public class CreateProductService implements CreateProductUseCase {
 
         Product saved = repositoryPort.save(product);
         log.info("💾 Producto guardado con ID: {}", saved.getId());
+
+        // 📢 Publicar evento
+        ProductCreatedEvent event = ProductCreatedEvent.builder()
+                .productId(saved.getId())
+                .name(saved.getName())
+                .categoryId(saved.getCategory().getId())
+                .initialQuantity(request.getInitialQuantity())
+                .build();
+
+        eventPublisher.publishProductCreated(event);
 
         ProductResponse response = mapper.toResponse(saved);
         log.debug("📤 Respuesta generada: {}", response);

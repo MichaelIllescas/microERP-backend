@@ -2,7 +2,9 @@ package com.imperialnet.product_service.application.usecase;
 
 import com.imperialnet.product_service.application.dto.CategoryResponse;
 import com.imperialnet.product_service.application.dto.CreateProductRequest;
+import com.imperialnet.product_service.application.dto.ProductCreatedEvent;
 import com.imperialnet.product_service.application.dto.ProductResponse;
+import com.imperialnet.product_service.application.event.ProductEventPublisher;
 import com.imperialnet.product_service.application.port.out.CategoryRepositoryPort;
 import com.imperialnet.product_service.application.port.out.ProductRepositoryPort;
 import com.imperialnet.product_service.domain.model.Category;
@@ -10,9 +12,7 @@ import com.imperialnet.product_service.domain.model.Product;
 import com.imperialnet.product_service.infrastructure.mapper.ProductMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,6 +29,9 @@ class CreateProductServiceTest {
 
     @Mock
     private ProductMapper mapper;
+
+    @Mock
+    private ProductEventPublisher eventPublisher;
 
     @InjectMocks
     private CreateProductService service;
@@ -49,6 +52,7 @@ class CreateProductServiceTest {
         request.setDescription("Laptop de alta gama");
         request.setPrice(1500.0);
         request.setCategoryId(1L);
+        request.setInitialQuantity(10);
 
         category = Category.builder()
                 .id(1L)
@@ -107,6 +111,16 @@ class CreateProductServiceTest {
         verify(categoryRepositoryPort).existsById(1L);
         verify(repositoryPort).save(any(Product.class));
         verify(mapper).toResponse(saved);
+
+        // ✅ Verificar que se publicó el evento correctamente
+        ArgumentCaptor<ProductCreatedEvent> eventCaptor = ArgumentCaptor.forClass(ProductCreatedEvent.class);
+        verify(eventPublisher).publishProductCreated(eventCaptor.capture());
+
+        ProductCreatedEvent publishedEvent = eventCaptor.getValue();
+        assertThat(publishedEvent.getProductId()).isEqualTo(100L);
+        assertThat(publishedEvent.getName()).isEqualTo("Laptop");
+        assertThat(publishedEvent.getCategoryId()).isEqualTo(1L);
+        assertThat(publishedEvent.getInitialQuantity()).isEqualTo(10);
     }
 
     @Test
@@ -124,6 +138,6 @@ class CreateProductServiceTest {
 
         verify(categoryRepositoryPort).existsById(1L);
         verify(repositoryPort, never()).save(any(Product.class));
+        verify(eventPublisher, never()).publishProductCreated(any());
     }
-
 }

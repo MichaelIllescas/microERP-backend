@@ -17,4 +17,8 @@ public class CreateProductRequest {
 
     @NotNull(message = "La categoría es obligatoria")
     private Long categoryId;
+
+    // Campo opcional → puede venir null
+    private Integer initialQuantity;
 }
+
