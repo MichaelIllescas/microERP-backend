@@ -1,7 +1,7 @@
 # 🛒 Sales Service
 
-Microservicio responsable de la **gestión de ventas** dentro de la plataforma **MicroERP**.  
-Implementa arquitectura **hexagonal (Ports & Adapters)** con **Spring Boot**.
+Microservicio responsable de la gestión de ventas dentro de la plataforma **MicroERP**.
+Implementa **arquitectura hexagonal (Ports & Adapters)** con **Spring Boot** y se integra con otros servicios mediante mensajería asíncrona con **RabbitMQ**.
 
 ---
 
@@ -10,7 +10,8 @@ Permitir la administración de ventas del negocio, incluyendo:
 - Registro de ventas validadas con clientes, productos y stock.  
 - Consulta de ventas por estado, cliente, rango de fechas o ID.  
 - Cancelación de ventas existentes.  
-- Publicación de eventos de ventas confirmadas para otros microservicios.  
+- Publicación de eventos de ventas confirmadas (sale.created) hacia RabbitMQ, para que otros microservicios (por ejemplo, Stock Service o Report Service) puedan reaccionar de manera asíncrona.
+- Garantizar desacoplamiento entre microservicios, permitiendo que el Sales Service no dependa directamente de los tiempos de respuesta de otros sistemas, sino que utilice eventos para notificar cambios  
 
 ---
 
