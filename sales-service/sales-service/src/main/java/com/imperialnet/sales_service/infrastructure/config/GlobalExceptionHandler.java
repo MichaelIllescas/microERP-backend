@@ -1,4 +1,6 @@
 package com.imperialnet.sales_service.infrastructure.config;
+import com.imperialnet.sales_service.application.exception.SaleNotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -16,6 +18,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleNotFound(IllegalArgumentException ex) {
         log.warn("⚠️ Recurso no encontrado o argumento inválido: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(payload(HttpStatus.NOT_FOUND, ex.getMessage()));
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<?> handleNotFound(NotFoundException ex) {
+        log.warn("⚠️ Recurso no encontrado: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(payload(HttpStatus.NOT_FOUND, ex.getMessage()));
     }
 
@@ -37,6 +45,20 @@ public class GlobalExceptionHandler {
         log.error("❌ Error inesperado", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(payload(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor"));
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<?> handleruntime(RuntimeException ex) {
+        log.error("❌ Error inesperado", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(payload(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor"));
+    }
+
+
+    @ExceptionHandler(SaleNotFoundException.class)
+    public ResponseEntity<?> handleSaleNotFound(SaleNotFoundException ex) {
+        log.warn("⚠️ Venta no encontrada: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(payload(HttpStatus.NOT_FOUND, ex.getMessage()));
     }
 
     private Map<String, Object> payload(HttpStatus status, String message) {
